@@ -25,6 +25,7 @@ services:
     ports:
       - "500:500/udp"
       - "4500:4500/udp"
+      - "1701:1701/udp"
     privileged: true
     hostname: libreswan
     container_name: libreswan
@@ -38,8 +39,6 @@ services:
     restart: always
     env_file:
       - ./docker-compose.env
-    ports:
-      - "1701:1701/udp"
     privileged: true
     hostname: xl2tpd
     container_name: xl2tpd

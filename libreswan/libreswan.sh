@@ -235,11 +235,11 @@ conn shared
 
 conn l2tp-psk
   auto=add
-  left=$XL2TPD_SERVER
   leftprotoport=17/1701
   rightprotoport=17/%any
   type=transport
   phase2=esp
+
   also=shared
 
 conn xauth-psk
@@ -255,6 +255,7 @@ conn xauth-psk
   xauthby=file
   ike-frag=yes
   cisco-unity=yes
+
   also=shared
 EOF
 
