@@ -204,6 +204,8 @@ DNS_SRV2=${VPN_DNS_SRV2:-'8.8.4.4'}
 DNS_SRVS="\"$DNS_SRV1 $DNS_SRV2\""
 [ -n "$VPN_DNS_SRV1" ] && [ -z "$VPN_DNS_SRV2" ] && DNS_SRVS="$DNS_SRV1"
 
+XL2TPD_SERVER=xl2tpd
+
 # Create IPsec (Libreswan) config
 cat > /etc/ipsec.conf <<EOF
 version 2.0
@@ -233,6 +235,7 @@ conn shared
 
 conn l2tp-psk
   auto=add
+  left=$XL2TPD_SERVER
   leftprotoport=17/1701
   rightprotoport=17/%any
   type=transport
@@ -259,68 +262,30 @@ if uname -r | grep -qi 'coreos'; then
   sed -i '/phase2alg/s/,aes256-sha2_512//' /etc/ipsec.conf
 fi
 
-# Create xl2tpd config
-cat > /etc/xl2tpd/xl2tpd.conf <<EOF
-[global]
-port = 1701
-
-[lns default]
-ip range = $L2TP_POOL
-local ip = $L2TP_LOCAL
-require chap = yes
-refuse pap = yes
-require authentication = yes
-name = l2tpd
-pppoptfile = /etc/ppp/options.xl2tpd
-length bit = yes
-EOF
-
-# Set xl2tpd options
-cat > /etc/ppp/options.xl2tpd <<EOF
-+mschap-v2
-ipcp-accept-local
-ipcp-accept-remote
-noccp
-auth
-mtu 1280
-mru 1280
-proxyarp
-lcp-echo-failure 4
-lcp-echo-interval 30
-connect-delay 5000
-ms-dns $DNS_SRV1
-EOF
-
-if [ -z "$VPN_DNS_SRV1" ] || [ -n "$VPN_DNS_SRV2" ]; then
-cat >> /etc/ppp/options.xl2tpd <<EOF
-ms-dns $DNS_SRV2
-EOF
-fi
-
-# Update sysctl settings
-SYST='/sbin/sysctl -e -q -w'
-if [ "$(getconf LONG_BIT)" = "64" ]; then
-  SHM_MAX=68719476736
-  SHM_ALL=4294967296
-else
-  SHM_MAX=4294967295
-  SHM_ALL=268435456
-fi
-$SYST kernel.msgmnb=65536
-$SYST kernel.msgmax=65536
-$SYST kernel.shmmax=$SHM_MAX
-$SYST kernel.shmall=$SHM_ALL
-$SYST net.ipv4.ip_forward=1
-$SYST net.ipv4.conf.all.accept_source_route=0
-$SYST net.ipv4.conf.all.accept_redirects=0
-$SYST net.ipv4.conf.all.send_redirects=0
-$SYST net.ipv4.conf.all.rp_filter=0
-$SYST net.ipv4.conf.default.accept_source_route=0
-$SYST net.ipv4.conf.default.accept_redirects=0
-$SYST net.ipv4.conf.default.send_redirects=0
-$SYST net.ipv4.conf.default.rp_filter=0
-$SYST net.ipv4.conf.eth0.send_redirects=0
-$SYST net.ipv4.conf.eth0.rp_filter=0
+# # Update sysctl settings
+# SYST='/sbin/sysctl -e -q -w'
+# if [ "$(getconf LONG_BIT)" = "64" ]; then
+#   SHM_MAX=68719476736
+#   SHM_ALL=4294967296
+# else
+#   SHM_MAX=4294967295
+#   SHM_ALL=268435456
+# fi
+# $SYST kernel.msgmnb=65536
+# $SYST kernel.msgmax=65536
+# $SYST kernel.shmmax=$SHM_MAX
+# $SYST kernel.shmall=$SHM_ALL
+# $SYST net.ipv4.ip_forward=1
+# $SYST net.ipv4.conf.all.accept_source_route=0
+# $SYST net.ipv4.conf.all.accept_redirects=0
+# $SYST net.ipv4.conf.all.send_redirects=0
+# $SYST net.ipv4.conf.all.rp_filter=0
+# $SYST net.ipv4.conf.default.accept_source_route=0
+# $SYST net.ipv4.conf.default.accept_redirects=0
+# $SYST net.ipv4.conf.default.send_redirects=0
+# $SYST net.ipv4.conf.default.rp_filter=0
+# $SYST net.ipv4.conf.eth0.send_redirects=0
+# $SYST net.ipv4.conf.eth0.rp_filter=0
 
 # Create IPTables rules
 iptables -I INPUT 1 -p udp --dport 1701 -m policy --dir in --pol none -j DROP
@@ -355,29 +320,6 @@ Connect to your new VPN with these details:
 
 Server IP: $PUBLIC_IP
 IPsec PSK: $VPN_IPSEC_PSK
-Username: $VPN_USER
-Password: $VPN_PASSWORD
-EOF
-
-if [ -n "$VPN_ADDL_USERS" ] && [ -n "$VPN_ADDL_PASSWORDS" ]; then
-  count=1
-  addl_user=$(printf '%s' "$VPN_ADDL_USERS" | cut -d ' ' -f 1)
-  addl_password=$(printf '%s' "$VPN_ADDL_PASSWORDS" | cut -d ' ' -f 1)
-cat <<'EOF'
-
-Additional VPN users (username | password):
-EOF
-  while [ -n "$addl_user" ] && [ -n "$addl_password" ]; do
-cat <<EOF
-$addl_user | $addl_password
-EOF
-    count=$((count+1))
-    addl_user=$(printf '%s' "$VPN_ADDL_USERS" | cut -s -d ' ' -f "$count")
-    addl_password=$(printf '%s' "$VPN_ADDL_PASSWORDS" | cut -s -d ' ' -f "$count")
-  done
-fi
-
-cat <<'EOF'
 
 Write these down. You'll need them to connect!
 
@@ -389,8 +331,5 @@ Setup VPN clients: https://git.io/vpnclients
 EOF
 
 # Start services
-mkdir -p /run/pluto /var/run/pluto /var/run/xl2tpd
-rm -f /run/pluto/pluto.pid /var/run/pluto/pluto.pid /var/run/xl2tpd.pid
-
 /usr/local/sbin/ipsec start
-exec /usr/sbin/xl2tpd -D -c /etc/xl2tpd/xl2tpd.conf
+while true; do sleep 10; done;

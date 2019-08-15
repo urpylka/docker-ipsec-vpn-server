@@ -121,6 +121,7 @@ cat > /etc/ppp/chap-secrets <<EOF
 "$VPN_USER" l2tpd "$VPN_PASSWORD" *
 EOF
 
+mkdir /etc/ipsec.d/
 VPN_PASSWORD_ENC=$(openssl passwd -1 "$VPN_PASSWORD")
 cat > /etc/ipsec.d/passwd <<EOF
 $VPN_USER:$VPN_PASSWORD_ENC:xauth-psk
@@ -204,61 +205,6 @@ DNS_SRV2=${VPN_DNS_SRV2:-'8.8.4.4'}
 DNS_SRVS="\"$DNS_SRV1 $DNS_SRV2\""
 [ -n "$VPN_DNS_SRV1" ] && [ -z "$VPN_DNS_SRV2" ] && DNS_SRVS="$DNS_SRV1"
 
-# Create IPsec (Libreswan) config
-cat > /etc/ipsec.conf <<EOF
-version 2.0
-
-config setup
-  virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$L2TP_NET,%v4:!$XAUTH_NET
-  protostack=netkey
-  interfaces=%defaultroute
-  uniqueids=no
-
-conn shared
-  left=%defaultroute
-  leftid=$PUBLIC_IP
-  right=%any
-  encapsulation=yes
-  authby=secret
-  pfs=no
-  rekey=no
-  keyingtries=5
-  dpddelay=30
-  dpdtimeout=120
-  dpdaction=clear
-  ikev2=never
-  ike=aes256-sha2,aes128-sha2,aes256-sha1,aes128-sha1;modp1024,aes128-sha1;modp1024
-  phase2alg=aes_gcm-null,aes128-sha1,aes256-sha1,aes256-sha2_512,aes128-sha2,aes256-sha2
-  sha2-truncbug=yes
-
-conn l2tp-psk
-  auto=add
-  leftprotoport=17/1701
-  rightprotoport=17/%any
-  type=transport
-  phase2=esp
-  also=shared
-
-conn xauth-psk
-  auto=add
-  leftsubnet=0.0.0.0/0
-  rightaddresspool=$XAUTH_POOL
-  modecfgdns=$DNS_SRVS
-  leftxauthserver=yes
-  rightxauthclient=yes
-  leftmodecfgserver=yes
-  rightmodecfgclient=yes
-  modecfgpull=yes
-  xauthby=file
-  ike-frag=yes
-  cisco-unity=yes
-  also=shared
-EOF
-
-if uname -r | grep -qi 'coreos'; then
-  sed -i '/phase2alg/s/,aes256-sha2_512//' /etc/ipsec.conf
-fi
-
 # Create xl2tpd config
 cat > /etc/xl2tpd/xl2tpd.conf <<EOF
 [global]
@@ -329,6 +275,7 @@ iptables -I INPUT 3 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 iptables -I INPUT 4 -p udp -m multiport --dports 500,4500 -j ACCEPT
 iptables -I INPUT 5 -p udp --dport 1701 -m policy --dir in --pol ipsec -j ACCEPT
 iptables -I INPUT 6 -p udp --dport 1701 -j DROP
+
 iptables -I FORWARD 1 -m conntrack --ctstate INVALID -j DROP
 iptables -I FORWARD 2 -i eth+ -o ppp+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 iptables -I FORWARD 3 -i ppp+ -o eth+ -j ACCEPT
@@ -354,7 +301,6 @@ IPsec VPN server is now ready for use!
 Connect to your new VPN with these details:
 
 Server IP: $PUBLIC_IP
-IPsec PSK: $VPN_IPSEC_PSK
 Username: $VPN_USER
 Password: $VPN_PASSWORD
 EOF
@@ -392,5 +338,4 @@ EOF
 mkdir -p /run/pluto /var/run/pluto /var/run/xl2tpd
 rm -f /run/pluto/pluto.pid /var/run/pluto/pluto.pid /var/run/xl2tpd.pid
 
-/usr/local/sbin/ipsec start
 exec /usr/sbin/xl2tpd -D -c /etc/xl2tpd/xl2tpd.conf
