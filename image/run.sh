@@ -43,8 +43,9 @@ https://github.com/hwdsl2/docker-ipsec-vpn-server
 
 EOF
   exit 1
+else
+  ip link delete dummy0 >/dev/null 2>&1
 fi
-ip link delete dummy0 >/dev/null 2>&1
 
 mkdir -p /opt/src
 vpn_env="/opt/src/vpn.env"
