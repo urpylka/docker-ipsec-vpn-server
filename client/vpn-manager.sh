@@ -1,6 +1,21 @@
 #!/bin/bash
+
+# Copyright 2018-2019 Artem Smirnov <urpylka@gmail.com>
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # vpn-manager script is conection manager for xl2tpd over IPSec
-# Written by Artem Smirnov <urpylka@gmail.com>
+# Use: vpn-manager.sh <VPN_SERVER>
 
 if [[ `whoami` != "root" ]]
 then
@@ -10,9 +25,9 @@ fi
 
 CONNECTION_NAME="my-vpn-connection"
 REMOTE_IP="192.168.254.254"
-VPN_SERVER="coex.space"
+VPN_SERVER=$1
 
-echo "$(date) Создан ip-up скрипт"
+echo "$(date) ip-up script is creating"
 cat <<EOF | tee /etc/ppp/ip-up.d/vpn-routes-up > /dev/null && chmod a+x /etc/ppp/ip-up.d/vpn-routes-up
 #!/bin/sh
 # ppp.ip-up hook script for xl2tpd
@@ -26,7 +41,7 @@ then /sbin/ip route add \$REMOTE_NETWORK_24 via \$PPP_REMOTE
 fi
 EOF
 
-echo "$(date) Создан ip-down скрипт"
+echo "$(date) ip-down script is creating"
 cat <<EOF | tee /etc/ppp/ip-down.d/vpn-routes-down > /dev/null && chmod a+x /etc/ppp/ip-down.d/vpn-routes-down
 #!/bin/sh
 # ppp.ip-down hook script for xl2tpd
@@ -45,7 +60,7 @@ EOF
 touch /dev/shm/ipsec.lock
 START=$(date +%s)
 CONNECTED=false
-echo "$(date) Запуск vpn manager"
+echo "$(date) Launch vpn-manager"
 while true
 do
   # send ping 3 times with 0.2 second interval
@@ -97,17 +112,17 @@ do
     echo "$(date) Подключаю xl2tpd…"
     echo "c ${CONNECTION_NAME}" | tee /var/run/xl2tpd/l2tp-control > /dev/null
     for s in $(seq 1 30); do
-       if ping ${REMOTE_IP} -n -q -i 0.2 -c 3 -W 1 > /dev/null 2>&1
-       then
-         echo "$(date) Успешное подключение"
-         START=$(date +%s)
-         DURATION=0
-         CONNECTED=true
-         break
-       fi
-       if [ "$s" = "30" ]
-       then touch /dev/shm/ipsec.lock
-       fi
+      if ping ${REMOTE_IP} -n -q -i 0.2 -c 3 -W 1 > /dev/null 2>&1
+      then
+        echo "$(date) Успешное подключение"
+        START=$(date +%s)
+        DURATION=0
+        CONNECTED=true
+        break
+      fi
+      if [ "$s" = "30" ]
+      then touch /dev/shm/ipsec.lock
+      fi
     done
   fi
 done
