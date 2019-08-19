@@ -218,6 +218,7 @@ config setup
 
 conn shared
   left=%defaultroute
+  leftnexthop=xl2tpd
   leftid=$PUBLIC_IP
   right=%any
   encapsulation=yes
