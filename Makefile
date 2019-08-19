@@ -12,7 +12,6 @@ down:
 	docker-compose down
 
 setup:
-	# docker exec -it ipsec-vpn-server vpncli
 	docker exec -it ipsec-vpn-server vpncli
 
 up: restart
