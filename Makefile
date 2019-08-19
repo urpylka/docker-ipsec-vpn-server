@@ -34,3 +34,8 @@ update: down reset-pull build start
 reset-pull:
 	git reset --hard HEAD~2
 	git pull
+
+debug:
+	docker exec -it libreswan apt update
+	docker exec -it libreswan apt install tcpdump
+	docker exec -it libreswan tcpdump -i eth0
