@@ -11,13 +11,14 @@ clean: down
 down:
 	docker-compose down
 
-setup: install
+setup:
 	# docker exec -it ipsec-vpn-server vpncli
 	docker exec -it ipsec-vpn-server vpncli
 
-up: install
+up: restart
+restart: down start
 
-install: down
+start:
 	docker-compose up -d
 
 info: ps logs
@@ -28,3 +29,9 @@ ps:
 logs:
 	docker logs xl2tpd
 	docker logs libreswan
+
+update: down reset-pull build start
+
+reset-pull:
+	git reset --hard HEAD~2
+	git pull
