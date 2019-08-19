@@ -211,8 +211,9 @@ cat > /etc/xl2tpd/xl2tpd.conf <<EOF
 port = 1701
 
 [lns default]
-ip range = $L2TP_POOL
-local ip = $L2TP_LOCAL
+local ip = 192.168.254.254
+exclusive = yes
+assign ip = no
 require chap = yes
 refuse pap = yes
 require authentication = yes
@@ -230,9 +231,8 @@ noccp
 auth
 mtu 1280
 mru 1280
-proxyarp
-lcp-echo-failure 4
-lcp-echo-interval 30
+noproxyarp
+persist
 connect-delay 5000
 ms-dns $DNS_SRV1
 EOF
