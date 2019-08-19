@@ -12,7 +12,8 @@ down:
 	docker-compose down
 
 setup:
-	docker exec -it ipsec-vpn-server vpncli
+	#docker exec -it ipsec-vpn-server vpncli
+	docker exec -it xl2tpd vpncli
 
 up: restart
 restart: down start
