@@ -4,16 +4,16 @@ build:
 	docker-compose build
 
 clean: down
-	# docker rmi docker-ipsec-vpn-server_vpn
-	docker rmi docker-ipsec-vpn-server_libreswan
-	docker rmi docker-ipsec-vpn-server_xl2tpd
+	docker rmi docker-ipsec-vpn-server_vpn
+	# docker rmi docker-ipsec-vpn-server_libreswan
+	# docker rmi docker-ipsec-vpn-server_xl2tpd
 
 down:
 	docker-compose down
 
 setup:
-	#docker exec -it ipsec-vpn-server vpncli
-	docker exec -it xl2tpd vpncli
+	docker exec -it ipsec-vpn-server vpncli
+	# docker exec -it xl2tpd vpncli
 
 up: restart
 restart: down start
@@ -45,3 +45,8 @@ debug2:
 	docker exec -it xl2tpd apt update
 	docker exec -it xl2tpd apt install tcpdump
 	docker exec -it xl2tpd tcpdump -i eth0
+
+debug3:
+	docker exec -it ipsec-vpn-server apt update
+	docker exec -it ipsec-vpn-server apt install tcpdump
+	docker exec -it ipsec-vpn-server tcpdump -i eth0

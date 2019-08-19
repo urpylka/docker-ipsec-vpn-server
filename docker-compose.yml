@@ -1,23 +1,9 @@
 version: '3'
 
 services:
-  # vpn:
-  #   build:
-  #       context: ./image
-  #       dockerfile: Dockerfile
-  #   restart: always
-  #   env_file:
-  #     - ./docker-compose.env
-  #   ports:
-  #     - "500:500/udp"
-  #     - "4500:4500/udp"
-  #   privileged: true
-  #   hostname: ipsec-vpn-server
-  #   container_name: ipsec-vpn-server
-
-  libreswan:
+  vpn:
     build:
-        context: ./libreswan
+        context: ./image
         dockerfile: Dockerfile
     restart: always
     env_file:
@@ -26,20 +12,34 @@ services:
       - "500:500/udp"
       - "4500:4500/udp"
     privileged: true
-    hostname: libreswan
-    container_name: libreswan
+    hostname: ipsec-vpn-server
+    container_name: ipsec-vpn-server
 
-  xl2tpd:
-    depends_on:
-      - libreswan
-    build:
-        context: ./xl2tpd
-        dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./docker-compose.env
-    ports:
-      - "1701:1701/udp"
-    privileged: true
-    hostname: xl2tpd
-    container_name: xl2tpd
+  # libreswan:
+  #   build:
+  #       context: ./libreswan
+  #       dockerfile: Dockerfile
+  #   restart: always
+  #   env_file:
+  #     - ./docker-compose.env
+  #   ports:
+  #     - "500:500/udp"
+  #     - "4500:4500/udp"
+  #   privileged: true
+  #   hostname: libreswan
+  #   container_name: libreswan
+
+  # xl2tpd:
+  #   depends_on:
+  #     - libreswan
+  #   build:
+  #       context: ./xl2tpd
+  #       dockerfile: Dockerfile
+  #   restart: always
+  #   env_file:
+  #     - ./docker-compose.env
+  #   ports:
+  #     - "1701:1701/udp"
+  #   privileged: true
+  #   hostname: xl2tpd
+  #   container_name: xl2tpd
