@@ -40,3 +40,8 @@ debug:
 	docker exec -it libreswan apt update
 	docker exec -it libreswan apt install tcpdump
 	docker exec -it libreswan tcpdump -i eth0
+
+debug2:
+	docker exec -it xl2tpd apt update
+	docker exec -it xl2tpd apt install tcpdump
+	docker exec -it xl2tpd tcpdump -i eth0
