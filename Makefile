@@ -15,6 +15,9 @@ setup:
 	docker exec -it ipsec-vpn-server vpncli
 	# docker exec -it xl2tpd vpncli
 
+bash:
+	docker exec -it ipsec-vpn-server /bin/bash
+
 up: restart
 restart: down start
 
