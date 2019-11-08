@@ -15,6 +15,8 @@ services:
     hostname: ipsec-vpn-server
     container_name: ipsec-vpn-server
 
+  # For developers ↓↓↓
+
   # libreswan:
   #   build:
   #       context: ./libreswan
