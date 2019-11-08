@@ -226,12 +226,13 @@ add_route(){
 }
 
 while true; do
-  echo "Enter one of: add, del, show, ch"
+  echo "Enter one of: add, del, show, ch, exit"
   read SEARCH_REQ
   case $SEARCH_REQ in
     add) add_client;;
     del) delete_client;;
     show) show_clients;;
     ch) change_client;;
+    exit) break;;
   esac
 done
